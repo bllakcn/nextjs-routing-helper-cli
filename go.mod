@@ -1,4 +1,4 @@
-module github.com/bllakcn/nextjs-routing-cli
+module github.com/bllakcn/nextjs-routing-helper-cli
 
 go 1.24.1
 
