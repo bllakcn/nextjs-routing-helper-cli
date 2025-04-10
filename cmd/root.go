@@ -1,6 +1,3 @@
-/*
-Copyright © 2025 AHMET BILAL AKCAN <bllakcn35@gmail.com>
-*/
 package cmd
 
 import (
@@ -9,9 +6,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Use:  "Nextjs-routing-helper-cli",
+	Use:   "nextjs-routing-helper",
 	Short: "Nextjs Routing Helper CLI - a simple CLI to create pages in Nextjs",
 	Long: `Nextjs Routing Helper CLI is a fast way to create pages in your Nextjs project.
 	It creates necessary files based on your preferences.
@@ -38,5 +34,3 @@ func init() {
 	// when this action is called directly.
 	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
-
-
