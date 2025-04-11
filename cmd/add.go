@@ -88,11 +88,11 @@ func determinePathAndComponent(pageNameInput string, config *Config) (filePath s
 		return "", "", fmt.Errorf("page name cannot be empty or just slashes")
 	}
 	// Ignore the last part if it's "index" for pages router
-	if config.Router == "pages" && strings.ToLower(parts[len(parts)-1]) == "index" {
+	if config.Router == constants.PagesRouter && strings.ToLower(parts[len(parts)-1]) == "index" {
 		parts = parts[:len(parts)-1]
 	}
 	// Ignore the last part if it's "page" for app router
-	if config.Router == "app" && strings.ToLower(parts[len(parts)-1]) == "page" {
+	if config.Router == constants.AppRouter && strings.ToLower(parts[len(parts)-1]) == "page" {
 		parts = parts[:len(parts)-1]
 	}
 	fileNamePart := parts[len(parts)-1]
@@ -101,7 +101,10 @@ func determinePathAndComponent(pageNameInput string, config *Config) (filePath s
 	}
 
 	// Determine component name (e.g., "UserProfilePage", "AboutPage")
-	componentName = helpers.ToPascalCase(fileNamePart) + "Page" // TODO: to be determined with config
+	componentName = helpers.ToPascalCase(fileNamePart)
+	if config.PageComponentSuffix != "" {
+		componentName += helpers.ToPascalCase(config.PageComponentSuffix)
+	}
 
 	var basePath string
 	var fileExtension string
@@ -115,7 +118,7 @@ func determinePathAndComponent(pageNameInput string, config *Config) (filePath s
 	}
 
 	// Determine base path and the actual filename used in the path structure
-	if config.Router == "app" {
+	if config.Router == constants.AppRouter {
 		if config.SrcFolder {
 			basePath = filepath.Join("src", "app")
 		} else {
@@ -154,7 +157,6 @@ func generatePageContent(componentName string, config *Config, useClient bool) (
 	// Define the template
 	const tpl = `
 {{if .UseClient}}'use client';{{end}}
-
 {{if eq .Style "const"}}const {{.ComponentName}} = () => {
   return (
     <div>

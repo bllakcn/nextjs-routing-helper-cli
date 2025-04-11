@@ -23,8 +23,8 @@ func TestDeterminePathAndComponent(t *testing.T) {
 			configLanguage:       "ts",
 			configComponentStyle: "function",
 			configSrcFolder:      false,
-			inputPath:            "dashboard/analytics",
-			expectedTarget:       filepath.Join("app", "dashboard", "analytics", "page.tsx"),
+			inputPath:            "dashboard",
+			expectedTarget:       filepath.Join("app", "dashboard", "page.tsx"),
 			expectedName:         "AnalyticsPage",
 		},
 		{

@@ -18,10 +18,11 @@ var AppFs afero.Fs = afero.NewOsFs()
 
 // Config holds the user preferences
 type Config struct {
-	Router         constants.RouterType `json:"router"`
-	Language       string               `json:"language"`
-	ComponentStyle string               `json:"componentStyle"`
-	SrcFolder      bool                 `json:"srcFolder"`
+	Router              constants.RouterType `json:"router"`
+	Language            string               `json:"language"`
+	ComponentStyle      string               `json:"componentStyle"`
+	SrcFolder           bool                 `json:"srcFolder"`
+	PageComponentSuffix string               `json:"pageComponentSuffix"`
 }
 
 var initCmd = &cobra.Command{
@@ -73,7 +74,7 @@ If the file already exists, you will be prompted to overwrite it.`, constants.Co
 		// --- Src Folder ---
 		fmt.Print("Does your project use a 'src' directory? (y/N): ")
 		srcChoice, _ := reader.ReadString('\n')
-		if strings.EqualFold(strings.TrimSpace(srcChoice), "y") {
+		if strings.EqualFold(strings.ToLower(strings.TrimSpace(srcChoice)), "y") {
 			config.SrcFolder = true
 		} else {
 			config.SrcFolder = false
@@ -83,32 +84,51 @@ If the file already exists, you will be prompted to overwrite it.`, constants.Co
 		fmt.Print("Use TypeScript or JavaScript? (Ts/js): ")
 		langChoice, _ := reader.ReadString('\n')
 		langChoice = strings.ToLower(strings.TrimSpace(langChoice))
-		if langChoice != "ts" && langChoice != "js" {
+		switch langChoice {
+		case "ts":
 			config.Language = "ts"
-		} else {
-			config.Language = langChoice
+		case "js":
+			config.Language = "js"
+		default:
+			fmt.Printf("Invalid choice '%s'. Defaulting to 'ts'.\n", langChoice)
+			config.Language = "ts"
 		}
 
 		// --- Component Style ---
 		fmt.Print("Prefer 'function' declarations or 'const' arrow functions? (Function/const): ")
 		styleChoice, _ := reader.ReadString('\n')
 		styleChoice = strings.ToLower(strings.TrimSpace(styleChoice))
-		if styleChoice != "const" && styleChoice != "function" {
+		switch styleChoice {
+		case "const":
+			config.ComponentStyle = "const"
+		case "function":
 			config.ComponentStyle = "function"
-		} else {
-			config.ComponentStyle = styleChoice
+		default:
+			fmt.Printf("Invalid choice '%s'. Defaulting to 'function'.\n", styleChoice)
+			config.ComponentStyle = "function"
 		}
 
+		// --- Page Suffix ---
+		fmt.Print("Use 'Page' suffix for page components? (Y/n): ")
+		pageSuffixChoice, _ := reader.ReadString('\n')
+		if strings.EqualFold(strings.ToLower(strings.TrimSpace(pageSuffixChoice)), "n") {
+			config.PageComponentSuffix = ""
+		} else {
+			config.PageComponentSuffix = "page"
+		}
+
+		// --- Write Config ---
 		if err := WriteConfig(AppFs, config); err != nil {
 			fmt.Fprintf(os.Stderr, "Failed to save configuration: %v\n", err)
 			os.Exit(1)
-		}
 
+		}
 		fmt.Printf("Configuration saved successfully to %s\n", constants.ConfigFileName)
 		fmt.Printf("  Router: %s\n", config.Router)
 		fmt.Printf("  Src Folder: %t\n", config.SrcFolder)
 		fmt.Printf("  Language: %s\n", config.Language)
 		fmt.Printf("  Component Style: %s\n", config.ComponentStyle)
+		fmt.Printf("  Page Component Suffix: %s\n", config.PageComponentSuffix)
 
 	},
 }
@@ -131,14 +151,4 @@ func WriteConfig(fs afero.Fs, config Config) error {
 
 func init() {
 	rootCmd.AddCommand(initCmd)
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// initCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// initCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
