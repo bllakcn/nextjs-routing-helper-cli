@@ -4,7 +4,9 @@ import (
 	"encoding/json"
 	"testing"
 
+	"github.com/bllakcn/nextjs-routing-helper-cli/cmd/constants"
 	"github.com/spf13/afero"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestInitConfig(t *testing.T) {
@@ -14,31 +16,22 @@ func TestInitConfig(t *testing.T) {
 		Router:         "app",
 		Language:       "ts",
 		ComponentStyle: "const",
+		SrcFolder:      true,
 	}
 
 	WriteConfig(fs, cfg)
 
 	// Check file exists
-	exists, err := afero.Exists(fs, ConfigFileName)
-	if err != nil {
-		t.Fatalf("Error checking if config file exists: %v", err)
-	}
-	if !exists {
-		t.Fatalf("Expected config file '%s' to exist", ConfigFileName)
-	}
+	exists, err := afero.Exists(fs, constants.ConfigFileName)
+	assert.NoError(t, err, "checking if config file exists")
+	assert.True(t, exists, "Expected config file '%s' to exist", constants.ConfigFileName)
 
 	// Check contents
-	data, err := afero.ReadFile(fs, ConfigFileName)
-	if err != nil {
-		t.Fatalf("Error reading config file: %v", err)
-	}
+	data, err := afero.ReadFile(fs, constants.ConfigFileName)
+	assert.NoError(t, err, "reading config file")
 
 	var readCfg Config
-	if err := json.Unmarshal(data, &readCfg); err != nil {
-		t.Fatalf("Error unmarshalling config JSON: %v", err)
-	}
+	assert.NoError(t, json.Unmarshal(data, &readCfg), "unmarshalling config JSON")
 
-	if readCfg != cfg {
-		t.Errorf("Config mismatch.\nExpected: %+v\nGot: %+v", cfg, readCfg)
-	}
+	assert.Equal(t, cfg, readCfg, "Config mismatch")
 }

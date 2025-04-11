@@ -9,25 +9,35 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/bllakcn/nextjs-routing-helper-cli/pkg"
+	"github.com/bllakcn/nextjs-routing-helper-cli/cmd/constants"
+	"github.com/bllakcn/nextjs-routing-helper-cli/cmd/helpers"
+	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 )
 
 // addCmd represents the add command
 var addCmd = &cobra.Command{
-	Use:   "add <page-name>",
+	Use:   "add [page-name] --flag",
 	Short: "Adds a new page to your Next.js project.",
 	Long: `Adds a new page based on the configuration.
 Page name can include subdirectories (e.g., 'users/profile').`,
-	Args: cobra.ExactArgs(1), // Ensures exactly one argument (page-name) is provided
+	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		pageNameInput := args[0]
+
+		useClientFlag, _ := cmd.Flags().GetBool("use-client")
 
 		// 1. Read Configuration
 		config, err := loadConfig()
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error loading configuration:\n%v", err)
+			fmt.Fprintf(os.Stderr, "Error loading configuration:\n%v\n", err)
 			fmt.Fprintln(os.Stderr, "Please run 'nextjs-routing-helper-cli init' first.")
+			os.Exit(1)
+		}
+
+		// Check if the router type is valid
+		if !config.Router.IsValid() {
+			fmt.Fprintf(os.Stderr, "Invalid router type in configuration file '%s'.\n", constants.ConfigFileName)
 			os.Exit(1)
 		}
 
@@ -39,14 +49,14 @@ Page name can include subdirectories (e.g., 'users/profile').`,
 		}
 
 		// 3. Generate File Content
-		content, err := generatePageContent(pageComponentName, config)
+		content, err := generatePageContent(pageComponentName, config, useClientFlag)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error generating page content:\n%v\n", err)
 			os.Exit(1)
 		}
 
 		// 4. Create Directories and File
-		err = createPageFile(targetPath, content)
+		err = createPageFile(afero.NewOsFs(), targetPath, content)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error creating page file:\n%v\n", err)
 			os.Exit(1)
@@ -58,15 +68,15 @@ Page name can include subdirectories (e.g., 'users/profile').`,
 
 // loadConfig reads and parses the .nextjs_routing_helper.json file
 func loadConfig() (*Config, error) {
-	data, err := os.ReadFile(ConfigFileName)
+	data, err := os.ReadFile(constants.ConfigFileName)
 	if err != nil {
-		return nil, fmt.Errorf("could not read config file '%s': %w", ConfigFileName, err)
+		return nil, fmt.Errorf("could not read config file '%s': %w", constants.ConfigFileName, err)
 	}
 
 	var config Config
 	err = json.Unmarshal(data, &config)
 	if err != nil {
-		return nil, fmt.Errorf("could not parse config file '%s': %w", ConfigFileName, err)
+		return nil, fmt.Errorf("could not parse config file '%s': %w", constants.ConfigFileName, err)
 	}
 	return &config, nil
 }
@@ -77,13 +87,21 @@ func determinePathAndComponent(pageNameInput string, config *Config) (filePath s
 	if len(parts) == 0 || parts[0] == "" {
 		return "", "", fmt.Errorf("page name cannot be empty or just slashes")
 	}
+	// Ignore the last part if it's "index" for pages router
+	if config.Router == "pages" && strings.ToLower(parts[len(parts)-1]) == "index" {
+		parts = parts[:len(parts)-1]
+	}
+	// Ignore the last part if it's "page" for app router
+	if config.Router == "app" && strings.ToLower(parts[len(parts)-1]) == "page" {
+		parts = parts[:len(parts)-1]
+	}
 	fileNamePart := parts[len(parts)-1]
 	if fileNamePart == "" {
 		return "", "", fmt.Errorf("page name cannot end with a slash")
 	}
 
 	// Determine component name (e.g., "UserProfilePage", "AboutPage")
-	componentName = pkg.ToPascalCase(fileNamePart) + "Page" // TODO: to be determined with config
+	componentName = helpers.ToPascalCase(fileNamePart) + "Page" // TODO: to be determined with config
 
 	var basePath string
 	var fileExtension string
@@ -113,24 +131,9 @@ func determinePathAndComponent(pageNameInput string, config *Config) (filePath s
 		} else {
 			basePath = "pages"
 		}
-		// Handle index pages specifically
-		if strings.ToLower(fileNamePart) == "index" {
-			pageFileName = "index" + fileExtension
-			if len(parts) > 1 { // Index inside a subdirectory e.g. users/index
-				// Path is pages/users/index.tsx
-				filePath = filepath.Join(basePath, filepath.Join(parts[:len(parts)-1]...), pageFileName)
-			} else { // Top-level index
-				// Path is pages/index.tsx
-				filePath = filepath.Join(basePath, pageFileName)
-			}
-		} else { // Regular page file, e.g., "about" or "users/profile"
-			pageFileName = fileNamePart + fileExtension
-			// Path uses the input path structure directly, ending with the calculated filename
-			// For "users/profile": pages/users/profile.tsx -> Join(basePath, "users", "profile.tsx")
-			// For "about": pages/about.tsx -> Join(basePath, "about.tsx")
-			parentDirs := parts[:len(parts)-1]
-			filePath = filepath.Join(basePath, filepath.Join(parentDirs...), pageFileName)
-		}
+		// For pages router, always use 'index.ext' as the page file
+		pageFileName = "index" + fileExtension
+		filePath = filepath.Join(basePath, pageNameInput, pageFileName)
 	}
 
 	// Clean the path (removes redundant slashes, resolves "..")
@@ -143,15 +146,15 @@ func determinePathAndComponent(pageNameInput string, config *Config) (filePath s
 type PageData struct {
 	ComponentName string
 	Style         string
-	// UseClient     bool
+	UseClient     bool
 }
 
 // generatePageContent creates the basic component code
-// THIS IS A VERY BASIC EXAMPLE - Use text/template for real world use
-func generatePageContent(componentName string, config *Config) (string, error) {
+func generatePageContent(componentName string, config *Config, useClient bool) (string, error) {
 	// Define the template
-	// {{if .UseClient}}'use client';{{end}} //TODO ↴
 	const tpl = `
+{{if .UseClient}}'use client';{{end}}
+
 {{if eq .Style "const"}}const {{.ComponentName}} = () => {
   return (
     <div>
@@ -182,7 +185,7 @@ export default {{.ComponentName}};
 	data := PageData{
 		ComponentName: componentName,
 		Style:         config.ComponentStyle,
-		// UseClient:     config.Router == "app" &&  //TODO: This should be a flag
+		UseClient:     config.Router == constants.AppRouter && useClient,
 	}
 
 	// Execute the template
@@ -195,15 +198,15 @@ export default {{.ComponentName}};
 }
 
 // createPageFile ensures directories exist and writes the file
-func createPageFile(targetPath string, content string) error {
+func createPageFile(fs afero.Fs, targetPath string, content string) error {
 	// Ensure directory exists
 	dir := filepath.Dir(targetPath)
-	if err := os.MkdirAll(dir, 0755); err != nil { // rwxr-xr-x permissions
+	if err := fs.MkdirAll(dir, 0755); err != nil { // rwxr-xr-x permissions
 		return fmt.Errorf("could not create directory '%s': %w", dir, err)
 	}
 
 	// Write the file
-	if err := os.WriteFile(targetPath, []byte(content), 0644); err != nil { // rw-r--r--
+	if err := afero.WriteFile(fs, targetPath, []byte(content), 0644); err != nil { // rw-r--r--
 		return fmt.Errorf("could not write file '%s': %w", targetPath, err)
 	}
 
@@ -212,14 +215,5 @@ func createPageFile(targetPath string, content string) error {
 
 func init() {
 	rootCmd.AddCommand(addCmd)
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// addCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// addCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	addCmd.Flags().Bool("use-client", false, "Use 'use client' directive for the component (only for app router)")
 }
