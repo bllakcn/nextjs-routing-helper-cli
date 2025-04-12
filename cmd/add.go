@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -27,7 +26,7 @@ var addCmd = &cobra.Command{
 		useClientFlag, _ := cmd.Flags().GetBool("use-client")
 
 		// Read Configuration
-		config, err := loadConfig()
+		config, err := constants.LoadConfig()
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error loading configuration:\n%v\n", err)
 			fmt.Fprintln(os.Stderr, "Please run 'nextjs-routing-helper-cli init' first.")
@@ -68,21 +67,6 @@ var addCmd = &cobra.Command{
 			fmt.Printf("Successfully created a page: \n- %s\n", args[0])
 		}
 	},
-}
-
-// loadConfig reads and parses the config file
-func loadConfig() (*constants.Config, error) {
-	data, err := os.ReadFile(constants.ConfigFileName)
-	if err != nil {
-		return nil, fmt.Errorf("could not read config file '%s': %w", constants.ConfigFileName, err)
-	}
-
-	var config constants.Config
-	err = json.Unmarshal(data, &config)
-	if err != nil {
-		return nil, fmt.Errorf("could not parse config file '%s': %w", constants.ConfigFileName, err)
-	}
-	return &config, nil
 }
 
 // determinePathAndComponent calculates the final file path and component name
