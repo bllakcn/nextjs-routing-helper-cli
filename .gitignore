@@ -25,4 +25,8 @@ go.work.sum
 .env
 
 .DS_Store
+
+# testing
 .nextjs_routing_helper.json
+app
+pages
