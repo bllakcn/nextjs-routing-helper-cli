@@ -11,8 +11,8 @@ import (
 func TestDeterminePathAndComponent(t *testing.T) {
 	tests := []struct {
 		configRouter         constants.RouterType
-		configLanguage       string
-		configComponentStyle string
+		configLanguage       constants.LanguageType
+		configComponentStyle constants.ComponentStyleType
 		configSrcFolder      bool
 		inputPath            string
 		expectedTarget       string
@@ -23,32 +23,35 @@ func TestDeterminePathAndComponent(t *testing.T) {
 			configLanguage:       "ts",
 			configComponentStyle: "function",
 			configSrcFolder:      false,
-			inputPath:            "dashboard",
-			expectedTarget:       filepath.Join("app", "dashboard", "page.tsx"),
-			expectedName:         "AnalyticsPage",
+
+			inputPath:      "dashboard",
+			expectedTarget: filepath.Join("app", "dashboard", "page.tsx"),
+			expectedName:   "AnalyticsPage",
 		},
 		{
 			configRouter:         "pages",
 			configLanguage:       "ts",
 			configComponentStyle: "const",
 			configSrcFolder:      false,
-			inputPath:            "auth/login",
-			expectedTarget:       filepath.Join("pages", "auth", "login", "index.tsx"),
-			expectedName:         "LoginPage",
+
+			inputPath:      "auth/login",
+			expectedTarget: filepath.Join("pages", "auth", "login", "index.tsx"),
+			expectedName:   "LoginPage",
 		},
 		{
 			configRouter:         "app",
 			configLanguage:       "js",
 			configComponentStyle: "function",
 			configSrcFolder:      true,
-			inputPath:            "products/details",
-			expectedTarget:       filepath.Join("src", "app", "products", "details", "page.jsx"),
-			expectedName:         "DetailsPage",
+
+			inputPath:      "products/details",
+			expectedTarget: filepath.Join("src", "app", "products", "details", "page.jsx"),
+			expectedName:   "DetailsPage",
 		},
 	}
 
 	for _, tt := range tests {
-		mockConfig := &Config{
+		mockConfig := &constants.Config{
 			Router:         tt.configRouter,
 			Language:       tt.configLanguage,
 			ComponentStyle: tt.configComponentStyle,

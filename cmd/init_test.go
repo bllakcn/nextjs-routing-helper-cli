@@ -12,7 +12,7 @@ import (
 func TestInitConfig(t *testing.T) {
 	fs := afero.NewMemMapFs()
 
-	cfg := Config{
+	cfg := constants.Config{
 		Router:         "app",
 		Language:       "ts",
 		ComponentStyle: "const",
@@ -30,7 +30,7 @@ func TestInitConfig(t *testing.T) {
 	data, err := afero.ReadFile(fs, constants.ConfigFileName)
 	assert.NoError(t, err, "reading config file")
 
-	var readCfg Config
+	var readCfg constants.Config
 	assert.NoError(t, json.Unmarshal(data, &readCfg), "unmarshalling config JSON")
 
 	assert.Equal(t, cfg, readCfg, "Config mismatch")

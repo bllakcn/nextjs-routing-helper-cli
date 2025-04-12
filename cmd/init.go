@@ -16,15 +16,6 @@ import (
 // Create a filesystem instance. For production, use the OS filesystem.
 var AppFs afero.Fs = afero.NewOsFs()
 
-// Config holds the user preferences
-type Config struct {
-	Router              constants.RouterType `json:"router"`
-	Language            string               `json:"language"`
-	ComponentStyle      string               `json:"componentStyle"`
-	SrcFolder           bool                 `json:"srcFolder"`
-	PageComponentSuffix string               `json:"pageComponentSuffix"`
-}
-
 var initCmd = &cobra.Command{
 	Use:   "init",
 	Short: "Initialize your preferences",
@@ -40,7 +31,7 @@ This file contains settings like:
 If the file already exists, you will be prompted to overwrite it.`, constants.ConfigFileName),
 	Run: func(cmd *cobra.Command, args []string) {
 		reader := bufio.NewReader(os.Stdin)
-		config := Config{}
+		config := constants.Config{}
 
 		fmt.Println("Initializing Next.js Routing CLI configuration...")
 
@@ -134,7 +125,7 @@ If the file already exists, you will be prompted to overwrite it.`, constants.Co
 }
 
 // WriteConfig writes the config to the given filesystem.
-func WriteConfig(fs afero.Fs, config Config) error {
+func WriteConfig(fs afero.Fs, config constants.Config) error {
 	// Marshal config to JSON
 	configData, err := json.MarshalIndent(config, "", "  ") // Pretty print JSON
 	if err != nil {

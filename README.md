@@ -27,9 +27,6 @@ $ nextjs-routing-helper init
 
 This will create a `.nextjs_routing_helper.json`, where the cli will hold the necessary preferences.
 
-> [!NOTE]
-> It is not added to `.gitignore` by deafult.
-
 2. Add a Page
 
 ```zsh

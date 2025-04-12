@@ -15,19 +15,18 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// addCmd represents the add command
 var addCmd = &cobra.Command{
 	Use:   "add [page-name] --flag",
 	Short: "Adds a new page to your Next.js project.",
 	Long: `Adds a new page based on the configuration.
-Page name can include subdirectories (e.g., 'users/profile').`,
-	Args: cobra.ExactArgs(1),
+- Page name can include subdirectories (e.g., 'users/profile').
+- It can create multiple pages (eg., 'profile profile/settings').
+`,
+	Args: cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		pageNameInput := args[0]
-
 		useClientFlag, _ := cmd.Flags().GetBool("use-client")
 
-		// 1. Read Configuration
+		// Read Configuration
 		config, err := loadConfig()
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error loading configuration:\n%v\n", err)
@@ -35,45 +34,50 @@ Page name can include subdirectories (e.g., 'users/profile').`,
 			os.Exit(1)
 		}
 
-		// Check if the router type is valid
-		if !config.Router.IsValid() {
-			fmt.Fprintf(os.Stderr, "Invalid router type in configuration file '%s'.\n", constants.ConfigFileName)
-			os.Exit(1)
-		}
+		for i := range args {
+			pageNameInput := args[i]
 
-		// 2. Determine Path and Filename
-		targetPath, pageComponentName, err := determinePathAndComponent(pageNameInput, config)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error determining path:\n%v\n", err)
-			os.Exit(1)
-		}
+			// Determine Path and Filename
+			targetPath, pageComponentName, err := determinePathAndComponent(pageNameInput, config)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Error determining path:\n%v\n", err)
+				os.Exit(1)
+			}
 
-		// 3. Generate File Content
-		content, err := generatePageContent(pageComponentName, config, useClientFlag)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error generating page content:\n%v\n", err)
-			os.Exit(1)
-		}
+			// Generate File Content
+			content, err := generatePageContent(pageComponentName, config, useClientFlag)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Error generating page content:\n%v\n", err)
+				os.Exit(1)
+			}
 
-		// 4. Create Directories and File
-		err = createPageFile(afero.NewOsFs(), targetPath, content)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error creating page file:\n%v\n", err)
-			os.Exit(1)
-		}
+			// Create Directories and File
+			err = createPageFile(afero.NewOsFs(), targetPath, content)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Error creating page file:\n%v\n", err)
+				os.Exit(1)
+			}
 
-		fmt.Printf("Successfully created page:\n%s\n", targetPath)
+		}
+		if len(args) > 1 {
+			fmt.Println("Successfully created pages:")
+			for _, page := range args {
+				fmt.Printf("- %s\n", page)
+			}
+		} else {
+			fmt.Printf("Successfully created a page: \n- %s\n", args[0])
+		}
 	},
 }
 
-// loadConfig reads and parses the .nextjs_routing_helper.json file
-func loadConfig() (*Config, error) {
+// loadConfig reads and parses the config file
+func loadConfig() (*constants.Config, error) {
 	data, err := os.ReadFile(constants.ConfigFileName)
 	if err != nil {
 		return nil, fmt.Errorf("could not read config file '%s': %w", constants.ConfigFileName, err)
 	}
 
-	var config Config
+	var config constants.Config
 	err = json.Unmarshal(data, &config)
 	if err != nil {
 		return nil, fmt.Errorf("could not parse config file '%s': %w", constants.ConfigFileName, err)
@@ -82,7 +86,7 @@ func loadConfig() (*Config, error) {
 }
 
 // determinePathAndComponent calculates the final file path and component name
-func determinePathAndComponent(pageNameInput string, config *Config) (filePath string, componentName string, err error) {
+func determinePathAndComponent(pageNameInput string, config *constants.Config) (filePath string, componentName string, err error) {
 	parts := strings.Split(pageNameInput, "/")
 	if len(parts) == 0 || parts[0] == "" {
 		return "", "", fmt.Errorf("page name cannot be empty or just slashes")
@@ -148,12 +152,12 @@ func determinePathAndComponent(pageNameInput string, config *Config) (filePath s
 // PageData holds the dynamic data for the page template
 type PageData struct {
 	ComponentName string
-	Style         string
+	Style         constants.ComponentStyleType
 	UseClient     bool
 }
 
 // generatePageContent creates the basic component code
-func generatePageContent(componentName string, config *Config, useClient bool) (string, error) {
+func generatePageContent(componentName string, config *constants.Config, useClient bool) (string, error) {
 	// Define the template
 	const tpl = `
 {{if .UseClient}}'use client';{{end}}
