@@ -8,10 +8,14 @@ import (
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "nextjs-routing-helper",
+	Version: "v0.0.1",
+	Use:     "nextjs-routing-helper",
+	Example: `
+	- nextjs-routing-helper init 
+	- nextjs-routing-helper add [pageName]
+	`,
 	Short: "Nextjs Routing Helper CLI - a simple CLI to create pages in Nextjs",
-	Long: `Nextjs Routing Helper CLI is a fast way to create pages in your Nextjs project.
-	It creates necessary files based on your preferences.
+	Long: `Nextjs Routing Helper CLI is a fast way to create pages in your Nextjs project. It creates necessary files based on your preferences.
 	`,
 }
 
