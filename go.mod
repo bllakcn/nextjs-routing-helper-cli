@@ -6,6 +6,7 @@ require (
 	github.com/charmbracelet/bubbletea v1.3.4
 	github.com/charmbracelet/lipgloss v1.1.0
 	github.com/charmbracelet/x/term v0.2.1
+	github.com/common-nighthawk/go-figure v0.0.0-20210622060536-734e95fb86be
 	github.com/savannahostrowski/tree-bubble v0.0.0-20230724043728-d7bb06a8a67e
 	github.com/spf13/afero v1.14.0
 	github.com/spf13/cobra v1.9.1
