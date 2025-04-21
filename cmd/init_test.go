@@ -19,7 +19,7 @@ func TestInitConfig(t *testing.T) {
 		SrcFolder:      true,
 	}
 
-	WriteConfig(fs, cfg)
+	constants.WriteConfig(fs, cfg)
 
 	// Check file exists
 	exists, err := afero.Exists(fs, constants.ConfigFileName)

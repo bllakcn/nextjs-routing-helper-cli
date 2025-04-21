@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -27,7 +26,7 @@ var addCmd = &cobra.Command{
 		useClientFlag, _ := cmd.Flags().GetBool("use-client")
 
 		// Read Configuration
-		config, err := loadConfig()
+		config, err := constants.LoadConfig()
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error loading configuration:\n%v\n", err)
 			fmt.Fprintln(os.Stderr, "Please run 'nextjs-routing-helper-cli init' first.")
@@ -68,21 +67,6 @@ var addCmd = &cobra.Command{
 			fmt.Printf("Successfully created a page: \n- %s\n", args[0])
 		}
 	},
-}
-
-// loadConfig reads and parses the config file
-func loadConfig() (*constants.Config, error) {
-	data, err := os.ReadFile(constants.ConfigFileName)
-	if err != nil {
-		return nil, fmt.Errorf("could not read config file '%s': %w", constants.ConfigFileName, err)
-	}
-
-	var config constants.Config
-	err = json.Unmarshal(data, &config)
-	if err != nil {
-		return nil, fmt.Errorf("could not parse config file '%s': %w", constants.ConfigFileName, err)
-	}
-	return &config, nil
 }
 
 // determinePathAndComponent calculates the final file path and component name
@@ -158,33 +142,17 @@ type PageData struct {
 
 // generatePageContent creates the basic component code
 func generatePageContent(componentName string, config *constants.Config, useClient bool) (string, error) {
-	// Define the template
-	const tpl = `
-{{if .UseClient}}'use client';{{end}}
-{{if eq .Style "const"}}const {{.ComponentName}} = () => {
-  return (
-    <div>
-      <h1>{{.ComponentName}}</h1>
-      {/* Add your content here */}
-    </div>
-  );
-};
-
-export default {{.ComponentName}};
-{{else}}export default function {{.ComponentName}}() {
-  return (
-    <div>
-      <h1>{{.ComponentName}}</h1>
-      {/* Add your content here */}
-    </div>
-  );
-}
-{{end}}`
+	// Load the external template file
+	tmplPath := "cmd/templates/page.tmpl"
+	tmplContent, err := afero.ReadFile(AppFs, tmplPath)
+	if err != nil {
+		return "", fmt.Errorf("error reading template file: %w", err)
+	}
 
 	// Parse the template
-	tmpl, err := template.New("page").Parse(tpl)
+	tmpl, err := template.New("page").Parse(string(tmplContent))
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("error parsing template: %w", err)
 	}
 
 	// Prepare the data
@@ -197,7 +165,7 @@ export default {{.ComponentName}};
 	// Execute the template
 	var output bytes.Buffer
 	if err := tmpl.Execute(&output, data); err != nil {
-		return "", err
+		return "", fmt.Errorf("error executing template: %w", err)
 	}
 
 	return output.String(), nil

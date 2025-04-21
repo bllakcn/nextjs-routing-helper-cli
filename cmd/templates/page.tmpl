@@ -1,0 +1,23 @@
+{{ if .UseClient }}'use client';
+
+{{ end }}{{ if eq .Style "const" -}}
+const {{.ComponentName}} = () => {
+  return (
+    <div>
+      <h1>{{.ComponentName}}</h1>
+      {/* Add your content here */}
+    </div>
+  );
+};
+
+export default {{.ComponentName}};
+{{- else -}}
+export default function {{.ComponentName}}() {
+  return (
+    <div>
+      <h1>{{.ComponentName}}</h1>
+      {/* Add your content here */}
+    </div>
+  );
+}
+{{- end }}

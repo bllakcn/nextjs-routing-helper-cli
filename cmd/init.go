@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"bufio"
-	"encoding/json"
 	"fmt"
 	"os"
 	"strings"
@@ -12,9 +11,6 @@ import (
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 )
-
-// Create a filesystem instance. For production, use the OS filesystem.
-var AppFs afero.Fs = afero.NewOsFs()
 
 var initCmd = &cobra.Command{
 	Use:   "init",
@@ -109,7 +105,7 @@ If the file already exists, you will be prompted to overwrite it.`, constants.Co
 		}
 
 		// --- Write Config ---
-		if err := WriteConfig(AppFs, config); err != nil {
+		if err := constants.WriteConfig(AppFs, config); err != nil {
 			fmt.Fprintf(os.Stderr, "Failed to save configuration: %v\n", err)
 			os.Exit(1)
 
@@ -122,22 +118,6 @@ If the file already exists, you will be prompted to overwrite it.`, constants.Co
 		fmt.Printf("  Page Component Suffix: %s\n", config.PageComponentSuffix)
 
 	},
-}
-
-// WriteConfig writes the config to the given filesystem.
-func WriteConfig(fs afero.Fs, config constants.Config) error {
-	// Marshal config to JSON
-	configData, err := json.MarshalIndent(config, "", "  ") // Pretty print JSON
-	if err != nil {
-		return fmt.Errorf("error marshalling config to JSON: %w", err)
-	}
-
-	// Write config file
-	err = afero.WriteFile(fs, constants.ConfigFileName, configData, 0644) // rw-r--r-- permissions
-	if err != nil {
-		return fmt.Errorf("error writing config file '%s': %w", constants.ConfigFileName, err)
-	}
-	return nil
 }
 
 func init() {
