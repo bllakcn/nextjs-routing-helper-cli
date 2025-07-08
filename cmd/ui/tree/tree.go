@@ -5,14 +5,13 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/bllakcn/nextjs-routing-helper-cli/cmd/constants"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/x/term"
 	tree "github.com/savannahostrowski/tree-bubble"
 	"github.com/spf13/afero"
 )
-
-var accentColor = lipgloss.Color("#f3bd72")
 
 var (
 	styleDoc = lipgloss.NewStyle().
@@ -57,8 +56,8 @@ func New(nodes []tree.Node) Model {
 	w, h, _ := term.GetSize(os.Stdout.Fd())
 	m := tree.New(nodes, w, h)
 
-	m.Styles.Selected = lipgloss.NewStyle().Foreground(accentColor)
-	m.Styles.Shapes = lipgloss.NewStyle().Foreground(accentColor)
+	m.Styles.Selected = lipgloss.NewStyle().Foreground(constants.AccentColor)
+	m.Styles.Shapes = lipgloss.NewStyle().Foreground(constants.AccentColor)
 
 	return Model{tree: m}
 }

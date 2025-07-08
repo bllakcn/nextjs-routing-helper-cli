@@ -32,7 +32,6 @@ var viewCmd = &cobra.Command{
 
 		// Create the nodes
 		nodeTree := treeui.BuildRouteTree(AppFs, startPath)
-		//
 
 		m := treeui.New([]tree.Node{nodeTree})
 		p := tea.NewProgram(m, tea.WithAltScreen())
